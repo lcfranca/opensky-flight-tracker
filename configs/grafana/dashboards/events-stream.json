@@ -1,0 +1,67 @@
+{
+  "uid": "opensky-events",
+  "title": "OpenSky - Event Stream",
+  "editable": false,
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "country",
+        "label": "Origin Country",
+        "hide": 0,
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": "All",
+        "multi": false,
+        "query": "SELECT origin_country FROM aviation.flight_positions GROUP BY origin_country ORDER BY origin_country",
+        "sort": 1
+      },
+      {
+        "type": "custom",
+        "name": "on_ground",
+        "label": "On ground",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": "All",
+        "multi": false,
+        "query": "0,1",
+        "current": { "text": "All", "value": "All" }
+      },
+      {
+        "type": "query",
+        "name": "icao24",
+        "label": "Aircraft (icao24)",
+        "hide": 0,
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": "All",
+        "multi": false,
+        "query": "SELECT icao24\nFROM aviation.active_flights\nWHERE ( '${country}' = 'All' OR origin_country = '${country}' )\n  AND ( '${on_ground}' = 'All' OR on_ground = toUInt8OrNull('${on_ground}') )\nGROUP BY icao24\nORDER BY max(timestamp) DESC\nLIMIT 5000",
+        "sort": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "table",
+      "title": "Latest events (near-real-time)",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 14 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT\n  toUnixTimestamp64Milli(timestamp) AS ts_ms,\n  formatDateTime(toDateTime(timestamp), '%F %T') AS ts,\n  icao24,\n  callsign,\n  origin_country,\n  latitude,\n  longitude,\n  altitude_ft,\n  speed_kmh,\n  on_ground,\n  position_source,\n  category\nFROM aviation.flight_positions\nWHERE $__timeFilter(timestamp)\n  AND ( '${country}' = 'All' OR origin_country = '${country}' )\n  AND ( '${icao24}' = 'All' OR icao24 = '${icao24}' )\n  AND ( '${on_ground}' = 'All' OR on_ground = toUInt8OrNull('${on_ground}') )\nORDER BY ts_ms DESC\nLIMIT 200"
+        }
+      ]
+    }
+  ]
+}

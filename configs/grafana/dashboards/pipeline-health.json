@@ -1,0 +1,110 @@
+{
+  "uid": "opensky-pipeline-health",
+  "title": "OpenSky - Pipeline Health",
+  "editable": false,
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Positions (last 5m)",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT count() AS positions_5m FROM aviation.flight_positions WHERE timestamp >= now() - INTERVAL 5 MINUTE AND timestamp <= now()"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Positions (last 30m)",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT count() AS positions_30m FROM aviation.flight_positions WHERE timestamp >= now() - INTERVAL 30 MINUTE AND timestamp <= now()"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Ingestion Lag (flight_positions)",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT dateDiff('second', max(timestamp), now()) AS lag_seconds FROM aviation.flight_positions"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Future timestamps (should be 0)",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT countIf(timestamp > now()) AS future_rows FROM aviation.flight_positions"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Flight positions per second",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT toStartOfSecond(timestamp) AS time, count() AS positions FROM aviation.flight_positions WHERE $__timeFilter(timestamp) GROUP BY time ORDER BY time ASC"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "OTel logs per second (Kafka receiver)",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT toStartOfSecond(toDateTime64(TimestampTime, 3)) AS time, count() AS logs FROM aviation.otel_logs WHERE $__timeFilter(TimestampTime) GROUP BY time ORDER BY time ASC"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Data quality (last 30m)",
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 7 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT\n  formatDateTime((SELECT max(timestamp) FROM aviation.flight_positions), '%F %T') AS flight_positions_last_seen,\n  formatDateTime((SELECT max(TimestampTime) FROM aviation.otel_logs), '%F %T') AS otel_logs_last_seen,\n  (SELECT uniqIf(icao24, timestamp >= now() - INTERVAL 30 MINUTE) FROM aviation.flight_positions) AS unique_flights_30m,\n  (SELECT countIf(on_ground = 1 AND timestamp >= now() - INTERVAL 30 MINUTE) FROM aviation.flight_positions) AS grounded_rows_30m,\n  (SELECT countIf(on_ground = 0 AND timestamp >= now() - INTERVAL 30 MINUTE) FROM aviation.flight_positions) AS airborne_rows_30m,\n  (SELECT countIf(NOT isFinite(latitude) OR NOT isFinite(longitude)) FROM aviation.flight_positions) AS invalid_geo_rows_total"
+        }
+      ]
+    }
+  ]
+}

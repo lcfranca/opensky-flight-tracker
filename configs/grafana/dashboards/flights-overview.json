@@ -1,0 +1,156 @@
+{
+  "uid": "opensky-overview",
+  "title": "OpenSky - Flights Overview",
+  "editable": false,
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-7d", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "country",
+        "label": "Origin Country",
+        "hide": 0,
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": "All",
+        "multi": false,
+        "query": "SELECT origin_country FROM aviation.flight_positions GROUP BY origin_country ORDER BY origin_country",
+        "sort": 1
+      },
+      {
+        "type": "custom",
+        "name": "on_ground",
+        "label": "On ground",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": "All",
+        "multi": false,
+        "query": "0,1",
+        "current": { "text": "All", "value": "All" }
+      },
+      {
+        "type": "query",
+        "name": "icao24",
+        "label": "Aircraft (icao24)",
+        "hide": 0,
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": "All",
+        "multi": false,
+        "query": "SELECT icao24\nFROM aviation.active_flights\nWHERE ( '${country}' = 'All' OR origin_country = '${country}' )\n  AND ( '${on_ground}' = 'All' OR on_ground = toUInt8OrNull('${on_ground}') )\nGROUP BY icao24\nORDER BY max(timestamp) DESC\nLIMIT 5000",
+        "sort": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Positions (selected range)",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT count() AS positions FROM aviation.flight_positions WHERE $__timeFilter(timestamp) AND ( '${country}' = 'All' OR origin_country = '${country}' ) AND ( '${icao24}' = 'All' OR icao24 = '${icao24}' ) AND ( '${on_ground}' = 'All' OR on_ground = toUInt8OrNull('${on_ground}') )"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Ingestion Lag (seconds)",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT dateDiff('second', max(timestamp), now()) AS ingest_lag_seconds FROM aviation.flight_positions WHERE ( '${country}' = 'All' OR origin_country = '${country}' ) AND ( '${icao24}' = 'All' OR icao24 = '${icao24}' ) AND ( '${on_ground}' = 'All' OR on_ground = toUInt8OrNull('${on_ground}') )"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Active Flights (selected range)",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT uniq(icao24) AS active_flights FROM aviation.flight_positions WHERE $__timeFilter(timestamp) AND ( '${country}' = 'All' OR origin_country = '${country}' ) AND ( '${icao24}' = 'All' OR icao24 = '${icao24}' ) AND ( '${on_ground}' = 'All' OR on_ground = toUInt8OrNull('${on_ground}') ) AND on_ground = 0"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Positions per minute (selected range)",
+      "gridPos": { "x": 0, "y": 4, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT toStartOfMinute(timestamp) AS time, count() AS positions FROM aviation.flight_positions WHERE $__timeFilter(timestamp) AND ( '${country}' = 'All' OR origin_country = '${country}' ) AND ( '${icao24}' = 'All' OR icao24 = '${icao24}' ) AND ( '${on_ground}' = 'All' OR on_ground = toUInt8OrNull('${on_ground}') ) GROUP BY time ORDER BY time ASC"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "barchart",
+      "title": "Top Origin Countries (selected range)",
+      "gridPos": { "x": 0, "y": 12, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT origin_country, flights\nFROM\n(\n  SELECT\n    toString(origin_country) AS origin_country,\n    uniq(icao24) AS flights\n  FROM aviation.flight_positions\n  WHERE $__timeFilter(timestamp)\n    AND ( '${country}' = 'All' OR origin_country = '${country}' )\n    AND ( '${icao24}' = 'All' OR icao24 = '${icao24}' )\n    AND ( '${on_ground}' = 'All' OR on_ground = toUInt8OrNull('${on_ground}') )\n    AND on_ground = 0\n  GROUP BY origin_country\n  ORDER BY flights DESC\n  LIMIT 10\n)\nUNION ALL\nSELECT 'No data' AS origin_country, 0 AS flights\nWHERE NOT EXISTS (\n  SELECT 1\n  FROM aviation.flight_positions\n  WHERE $__timeFilter(timestamp)\n    AND ( '${country}' = 'All' OR origin_country = '${country}' )\n    AND ( '${icao24}' = 'All' OR icao24 = '${icao24}' )\n    AND ( '${on_ground}' = 'All' OR on_ground = toUInt8OrNull('${on_ground}') )\n    AND on_ground = 0\n  LIMIT 1\n)"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "geomap",
+      "title": "Live Flight Positions (selected range)",
+      "gridPos": { "x": 8, "y": 12, "w": 16, "h": 12 },
+      "options": {
+        "view": { "id": "coords", "lat": 15, "lon": 0, "zoom": 2 },
+        "controls": { "showZoom": true, "showAttribution": true, "showScale": false },
+        "tooltip": { "mode": "details" },
+        "layers": [
+          {
+            "type": "markers",
+            "name": "Flights",
+            "config": {
+              "size": { "fixed": 4, "field": "" },
+              "shape": "circle",
+              "color": { "fixed": "blue" },
+              "showLegend": false,
+              "opacity": 0.8
+            },
+            "location": { "mode": "coords", "latitude": "lat", "longitude": "lon" }
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+          "queryType": "sql",
+          "rawSql": "SELECT\n  argMax(fp.latitude, fp.timestamp) AS lat,\n  argMax(fp.longitude, fp.timestamp) AS lon,\n  argMax(fp.callsign, fp.timestamp) AS callsign,\n  fp.icao24 AS icao24,\n  argMax(fp.origin_country, fp.timestamp) AS origin_country\nFROM aviation.flight_positions AS fp\nWHERE $__timeFilter(fp.timestamp)\n  AND ( '${country}' = 'All' OR fp.origin_country = '${country}' )\n  AND ( '${icao24}' = 'All' OR fp.icao24 = '${icao24}' )\n  AND ( '${on_ground}' = 'All' OR fp.on_ground = toUInt8OrNull('${on_ground}') )\n  AND fp.on_ground = 0\nGROUP BY fp.icao24\nHAVING isFinite(lat) AND isFinite(lon)\nORDER BY max(fp.timestamp) DESC\nLIMIT 2000"
+        }
+      ]
+    }
+  ]
+}

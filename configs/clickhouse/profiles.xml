@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<clickhouse>
+  <profiles>
+    <default>
+      <readonly>0</readonly>
+      <max_execution_time>600</max_execution_time>
+      <max_result_rows>1000000</max_result_rows>
+      <max_result_bytes>100000000</max_result_bytes>
+
+      <!-- Allow SET max_execution_time even if the client/driver toggles readonly. -->
+      <constraints>
+        <max_execution_time>
+          <min>1</min>
+          <max>600</max>
+          <changeable_in_readonly/>
+        </max_execution_time>
+      </constraints>
+    </default>
+  </profiles>
+</clickhouse>
