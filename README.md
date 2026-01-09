@@ -2,8 +2,6 @@
 
 Stack local (Docker Compose) que coleta estados de voo da OpenSky, publica no Kafka, processa via OpenTelemetry Collector e persiste no ClickHouse, com dashboards no Grafana.
 
-Este serviço é um laboratório de observabilidade e streaming: ele transforma snapshots da OpenSky em um fluxo contínuo de telemetria (via Kafka + OTel), materializa os dados no ClickHouse para consultas analíticas e disponibiliza visualizações operacionais no Grafana.
-
 ## Screenshot (Flights Overview)
 
 Exemplo do dashboard **OpenSky - Flights Overview** no Grafana (posições ao vivo + estado do pipeline):
