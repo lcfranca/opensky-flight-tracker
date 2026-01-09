@@ -133,8 +133,8 @@
             "type": "markers",
             "name": "Flights",
             "config": {
-              "size": { "fixed": 4, "field": "" },
-              "shape": "circle",
+              "size": { "fixed": 10, "field": "" },
+              "shape": "uil:plane",
               "color": { "fixed": "blue" },
               "showLegend": false,
               "opacity": 0.8
