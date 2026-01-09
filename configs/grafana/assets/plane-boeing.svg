@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    Slim jet / Boeing-like silhouette (no hard-coded fill so Grafana can tint).
+    A subtle outline improves readability on basemaps.
+  -->
+  <path
+    d="M31 4 L33 4 L36 11 L36 26 L54 34 L54 38 L36 33 L36 58 L28 58 L28 33 L10 38 L10 34 L28 26 L28 11 Z"
+    opacity="0.95"
+  />
+  <path
+    d="M31 4 L33 4 L36 11 L36 26 L54 34 L54 38 L36 33 L36 58 L28 58 L28 33 L10 38 L10 34 L28 26 L28 11 Z"
+    fill="none"
+    stroke="#000"
+    stroke-opacity="0.35"
+    stroke-width="1.6"
+    stroke-linejoin="round"
+  />
+</svg>

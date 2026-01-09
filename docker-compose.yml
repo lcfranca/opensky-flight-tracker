@@ -86,6 +86,7 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: 'false'
       GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
+      GF_PANELS_ENABLE_ALPHA: 'true'
       # Used by provisioning (configs/grafana/datasources/clickhouse.yml)
       CLICKHOUSE_USER: ${CLICKHOUSE_USER}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
@@ -97,6 +98,8 @@ services:
       - ./configs/grafana/datasources:/etc/grafana/provisioning/datasources:ro
       - ./configs/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./configs/grafana/assets/plane.svg:/usr/share/grafana/public/img/plane.svg:ro
+      - ./configs/grafana/assets/plane-ux.svg:/usr/share/grafana/public/img/plane-ux.svg:ro
+      - ./configs/grafana/assets/plane-boeing.svg:/usr/share/grafana/public/img/plane-boeing.svg:ro
     depends_on:
       clickhouse:
         condition: service_healthy

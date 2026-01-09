@@ -1,9 +1,6 @@
 # Env
 .env
 
-# Docs (requested)
-docs/
-
 # Python
 __pycache__/
 *.py[cod]

@@ -133,15 +133,22 @@
             "type": "markers",
             "name": "Flights",
             "config": {
-              "size": { "fixed": 4, "field": "" },
-              "shape": "circle",
-              "fillOpacity": 0.85,
-              "color": { "fixed": "#ffd400" },
-              "symbol": "img:/public/img/plane.svg",
-              "symbolVerticalAlign": "center",
-              "symbolHorizontalAlign": "center",
-              "showLegend": false,
-              "opacity": 1
+              "style": {
+                "size": { "fixed": 16, "min": 2, "max": 24 },
+                "color": { "fixed": "#7CFF6B" },
+                "opacity": 0.82,
+                "symbol": { "mode": "fixed", "fixed": "img/plane-boeing.svg" },
+                "symbolAlign": { "horizontal": "center", "vertical": "center" },
+                "textConfig": {
+                  "fontSize": 12,
+                  "textAlign": "center",
+                  "textBaseline": "middle",
+                  "offsetX": 0,
+                  "offsetY": 0
+                },
+                "rotation": { "field": "rotation", "fixed": 0, "mode": "mod", "min": -360, "max": 360 }
+              },
+              "showLegend": false
             },
             "location": { "mode": "coords", "latitude": "lat", "longitude": "lon" }
           }
@@ -152,7 +159,7 @@
           "refId": "A",
           "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
           "queryType": "sql",
-          "rawSql": "SELECT\n  argMax(fp.latitude, fp.timestamp) AS lat,\n  argMax(fp.longitude, fp.timestamp) AS lon,\n  argMax(fp.callsign, fp.timestamp) AS callsign,\n  fp.icao24 AS icao24,\n  argMax(fp.origin_country, fp.timestamp) AS origin_country\nFROM aviation.flight_positions AS fp\nWHERE $__timeFilter(fp.timestamp)\n  AND ( '${country}' = 'All' OR fp.origin_country = '${country}' )\n  AND ( '${icao24}' = 'All' OR fp.icao24 = '${icao24}' )\n  AND ( '${on_ground}' = 'All' OR fp.on_ground = toUInt8OrNull('${on_ground}') )\n  AND fp.on_ground = 0\nGROUP BY fp.icao24\nHAVING isFinite(lat) AND isFinite(lon)\nORDER BY max(fp.timestamp) DESC\nLIMIT 2000"
+          "rawSql": "SELECT\n  argMax(fp.latitude, fp.timestamp) AS lat,\n  argMax(fp.longitude, fp.timestamp) AS lon,\n  argMax(fp.callsign, fp.timestamp) AS callsign,\n  fp.icao24 AS icao24,\n  argMax(fp.origin_country, fp.timestamp) AS origin_country,\n  argMax(fp.true_track, fp.timestamp) AS rotation\nFROM aviation.flight_positions AS fp\nWHERE $__timeFilter(fp.timestamp)\n  AND ( '${country}' = 'All' OR fp.origin_country = '${country}' )\n  AND ( '${icao24}' = 'All' OR fp.icao24 = '${icao24}' )\n  AND ( '${on_ground}' = 'All' OR fp.on_ground = toUInt8OrNull('${on_ground}') )\n  AND fp.on_ground = 0\nGROUP BY fp.icao24\nHAVING isFinite(lat) AND isFinite(lon)\nORDER BY max(fp.timestamp) DESC\nLIMIT 2000"
         }
       ]
     }

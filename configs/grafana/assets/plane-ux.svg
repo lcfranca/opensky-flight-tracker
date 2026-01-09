@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    Main silhouette has no hard-coded fill so Grafana/OpenLayers can tint it.
+    Add a subtle dark outline to improve contrast on both light/dark basemaps.
+  -->
+  <path d="M32 5 L39 23 L61 27 L61 37 L39 33 L39 59 L25 59 L25 33 L3 37 L3 27 L25 23 Z" opacity="0.95" />
+  <path d="M32 5 L39 23 L61 27 L61 37 L39 33 L39 59 L25 59 L25 33 L3 37 L3 27 L25 23 Z" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="2" stroke-linejoin="round" />
+</svg>
