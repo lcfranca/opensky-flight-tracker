@@ -96,6 +96,7 @@ services:
       - grafana-data:/var/lib/grafana
       - ./configs/grafana/datasources:/etc/grafana/provisioning/datasources:ro
       - ./configs/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./configs/grafana/assets/plane.svg:/usr/share/grafana/public/img/plane.svg:ro
     depends_on:
       clickhouse:
         condition: service_healthy
